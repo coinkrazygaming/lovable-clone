@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Board</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        h1 {
+            color: white;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            font-size: 2.5rem;
+        }
+
+        .chess-board {
+            display: grid;
+            grid-template-columns: repeat(8, 80px);
+            grid-template-rows: repeat(8, 80px);
+            border: 4px solid #8B4513;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            background: #8B4513;
+            gap: 0;
+        }
+
+        .square {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .square.light {
+            background-color: #f0d9b5;
+        }
+
+        .square.dark {
+            background-color: #b58863;
+        }
+
+        .piece {
+            font-size: 50px;
+            cursor: grab;
+            user-select: none;
+        }
+
+        .piece:hover {
+            transform: scale(1.1);
+        }
+
+        .piece.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+        .square.drag-over {
+            background-color: rgba(255, 255, 0, 0.3) !important;
+            box-shadow: inset 0 0 0 3px yellow;
+        }
+
+        .piece.white {
+            color: #ffffff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .piece.black {
+            color: #333333;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chess Board</h1>
+        <div class="chess-board" id="chessBoard"></div>
+    </div>
+
+    <script>
+        let draggedPiece = null;
+
+        // Chess piece setup - all 32 pieces
+        const pieces = [
+            [
+                { symbol: '♜', color: 'black' },
+                { symbol: '♞', color: 'black' },
+                { symbol: '♝', color: 'black' },
+                { symbol: '♛', color: 'black' },
+                { symbol: '♚', color: 'black' },
+                { symbol: '♝', color: 'black' },
+                { symbol: '♞', color: 'black' },
+                { symbol: '♜', color: 'black' }
+            ],
+            [
+                { symbol: '♟', color: 'black' },
+                { symbol: '♟', color: 'black' },
+                { symbol: '♟', color: 'black' },
+                { symbol: '♟', color: 'black' },
+                { symbol: '♟', color: 'black' },
+                { symbol: '♟', color: 'black' },
+                { symbol: '♟', color: 'black' },
+                { symbol: '♟', color: 'black' }
+            ],
+            [null, null, null, null, null, null, null, null],
+            [null, null, null, null, null, null, null, null],
+            [null, null, null, null, null, null, null, null],
+            [null, null, null, null, null, null, null, null],
+            [
+                { symbol: '♙', color: 'white' },
+                { symbol: '♙', color: 'white' },
+                { symbol: '♙', color: 'white' },
+                { symbol: '♙', color: 'white' },
+                { symbol: '♙', color: 'white' },
+                { symbol: '♙', color: 'white' },
+                { symbol: '♙', color: 'white' },
+                { symbol: '♙', color: 'white' }
+            ],
+            [
+                { symbol: '♖', color: 'white' },
+                { symbol: '♘', color: 'white' },
+                { symbol: '♗', color: 'white' },
+                { symbol: '♕', color: 'white' },
+                { symbol: '♔', color: 'white' },
+                { symbol: '♗', color: 'white' },
+                { symbol: '♘', color: 'white' },
+                { symbol: '♖', color: 'white' }
+            ]
+        ];
+
+        // Create 8x8 board - same as debug-simple but with all pieces
+        const board = document.getElementById('chessBoard');
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const square = document.createElement('div');
+                square.className = `square ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
+                board.appendChild(square);
+                
+                // Add piece if one exists at this position
+                const piece = pieces[row][col];
+                if (piece) {
+                    const pieceElement = document.createElement('div');
+                    pieceElement.className = `piece ${piece.color}`;
+                    pieceElement.textContent = piece.symbol;
+                    pieceElement.draggable = true;
+                    square.appendChild(pieceElement);
+                }
+            }
+        }
+
+        // EXACT same working drag handlers from debug-simple
+        document.addEventListener('dragstart', (e) => {
+            if (e.target.classList.contains('piece')) {
+                draggedPiece = e.target;
+                e.target.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                console.log('Drag started');
+            }
+        });
+
+        document.addEventListener('dragend', (e) => {
+            if (e.target.classList.contains('piece')) {
+                e.target.classList.remove('dragging');
+                document.querySelectorAll('.square').forEach(s => s.classList.remove('drag-over'));
+                draggedPiece = null;
+                console.log('Drag ended');
+            }
+        });
+
+        document.addEventListener('dragover', (e) => {
+            if (e.target.classList.contains('square')) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+            }
+        });
+
+        document.addEventListener('dragenter', (e) => {
+            if (e.target.classList.contains('square') && draggedPiece) {
+                e.target.classList.add('drag-over');
+            }
+        });
+
+        document.addEventListener('dragleave', (e) => {
+            if (e.target.classList.contains('square')) {
+                e.target.classList.remove('drag-over');
+            }
+        });
+
+        document.addEventListener('drop', (e) => {
+            if (e.target.classList.contains('square') && draggedPiece) {
+                e.preventDefault();
+                e.target.classList.remove('drag-over');
+                
+                const existingPiece = e.target.querySelector('.piece');
+                if (existingPiece) {
+                    existingPiece.remove();
+                }
+                
+                e.target.appendChild(draggedPiece);
+                console.log('Piece moved');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .board { display: grid; grid-template-columns: repeat(3, 100px); gap: 2px; }
+        .square { width: 100px; height: 100px; border: 1px solid black; display: flex; align-items: center; justify-content: center; }
+        .piece { font-size: 40px; cursor: grab; }
+        .piece.dragging { opacity: 0.5; }
+        .square.drag-over { background-color: yellow; }
+    </style>
+</head>
+<body>
+    <div class="board">
+        <div class="square" data-pos="0"></div>
+        <div class="square" data-pos="1">
+            <div class="piece" draggable="true">♔</div>
+        </div>
+        <div class="square" data-pos="2"></div>
+    </div>
+
+    <script>
+        let draggedPiece = null;
+
+        document.addEventListener('dragstart', (e) => {
+            if (e.target.classList.contains('piece')) {
+                draggedPiece = e.target;
+                e.target.classList.add('dragging');
+                console.log('Drag started');
+            }
+        });
+
+        document.addEventListener('dragend', (e) => {
+            if (e.target.classList.contains('piece')) {
+                e.target.classList.remove('dragging');
+                document.querySelectorAll('.square').forEach(s => s.classList.remove('drag-over'));
+                draggedPiece = null;
+                console.log('Drag ended');
+            }
+        });
+
+        document.addEventListener('dragover', (e) => {
+            if (e.target.classList.contains('square')) {
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('dragenter', (e) => {
+            if (e.target.classList.contains('square') && draggedPiece) {
+                e.target.classList.add('drag-over');
+            }
+        });
+
+        document.addEventListener('dragleave', (e) => {
+            if (e.target.classList.contains('square')) {
+                e.target.classList.remove('drag-over');
+            }
+        });
+
+        document.addEventListener('drop', (e) => {
+            if (e.target.classList.contains('square') && draggedPiece) {
+                e.preventDefault();
+                e.target.classList.remove('drag-over');
+                
+                if (!e.target.querySelector('.piece')) {
+                    e.target.appendChild(draggedPiece);
+                    console.log('Piece moved');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

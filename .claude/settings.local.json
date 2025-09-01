@@ -20,7 +20,9 @@
       "Bash(timeout 10s npm start)",
       "Bash(timeout 5s npm start)",
       "Bash(timeout 8s npm start)",
-      "Bash(PORT=3001 timeout 3s npm start)"
+      "Bash(PORT=3001 timeout 3s npm start)",
+      "Bash(git commit:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": []
   }

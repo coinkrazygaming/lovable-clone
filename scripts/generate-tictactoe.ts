@@ -1,4 +1,4 @@
-import { generateWithClaude } from './src/generator';
+import { generateWithClaude } from '../src/lib/generator';
 
 async function main() {
   const prompt = "create a simple tic tac toe in typescript and html";
