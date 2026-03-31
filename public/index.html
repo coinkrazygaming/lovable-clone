@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lovable Clone - AI Web App Builder</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Fusion - AI Web App Builder</title>
+    <link rel="stylesheet" href="/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -12,182 +12,313 @@
         <!-- Header -->
         <header class="header">
             <div class="header-content">
-                <h1 class="logo">
-                    <span class="logo-icon">🚀</span>
-                    Lovable Clone
-                </h1>
-                <p class="tagline">Builtera - AI Web App Builder</p>
-                <button id="info-btn" class="info-btn" title="About Lovable Clone">
-                    <span class="info-icon">ℹ️</span>
-                </button>
+                <div>
+                    <h1 class="logo">
+                        <span class="logo-icon">⚡</span>
+                        Fusion
+                    </h1>
+                    <p class="tagline">The collaborative workspace for code</p>
+                </div>
+                <div class="header-actions">
+                    <button id="info-btn" class="info-btn" title="About Fusion">
+                        <span class="info-icon">ℹ️</span>
+                    </button>
+                    <button id="auth-btn" class="btn-primary" style="min-width: auto;">
+                        <span>Sign In</span>
+                    </button>
+                </div>
             </div>
         </header>
 
         <!-- Main Content -->
-        <main class="main-content">
-            <!-- Input Section -->
-            <section class="input-section">
-                <div class="input-container">
-                    <label for="prompt-input" class="input-label" id="input-label">
-                        What would you like to build?
-                    </label>
-                    
-                    <!-- Selected Project Context -->
-                    <div class="selected-project-context hidden" id="selected-project-context">
-                        <div class="context-header">
-                            <span class="context-icon">🔄</span>
-                            <span class="context-text">
-                                Continuing work on: <strong id="context-project-name">Project Name</strong>
-                            </span>
-                            <button id="clear-selection-btn" class="context-clear-btn" title="Start new project">
-                                <span>✕</span>
+        <main class="main-content" id="main-content">
+            <!-- Homepage View (Before Auth) -->
+            <div id="homepage-view" class="homepage-view">
+                <!-- Hero Section -->
+                <section class="hero-section">
+                    <div class="hero-container">
+                        <h2 class="hero-title">Build with AI, Code with Confidence</h2>
+                        <p class="hero-subtitle">Generate production-ready web apps from natural language. Push to GitHub. Iterate instantly.</p>
+                        
+                        <div class="hero-actions">
+                            <button class="btn-primary btn-large" id="create-project-btn">
+                                <span class="btn-icon">✨</span>
+                                <span>Create Project from Prompt</span>
+                            </button>
+                            <button class="btn-secondary btn-large" id="import-github-btn">
+                                <span class="btn-icon">🔗</span>
+                                <span>Import from GitHub</span>
                             </button>
                         </div>
-                        <div class="context-details">
-                            <span id="context-project-details">Details about the selected project</span>
+                    </div>
+                </section>
+
+                <!-- Features Overview -->
+                <section class="features-overview">
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <span class="feature-icon">🤖</span>
+                            <h3>AI-Powered Generation</h3>
+                            <p>Describe your app idea and watch it come to life instantly</p>
+                        </div>
+                        <div class="feature-card">
+                            <span class="feature-icon">📁</span>
+                            <h3>GitHub Connected</h3>
+                            <p>Import existing repos and push changes back seamlessly</p>
+                        </div>
+                        <div class="feature-card">
+                            <span class="feature-icon">👥</span>
+                            <h3>Team Collaboration</h3>
+                            <p>Organize projects in spaces and collaborate with your team</p>
+                        </div>
+                        <div class="feature-card">
+                            <span class="feature-icon">🚀</span>
+                            <h3>Deploy Instantly</h3>
+                            <p>One-click deployment to custom domains or subdomains</p>
                         </div>
                     </div>
-                    
-                    <div class="input-group">
-                        <textarea 
-                            id="prompt-input" 
-                            class="prompt-input" 
-                            placeholder="Describe your web app idea... (e.g., 'Create a todo app with drag and drop functionality')"
-                            rows="3"
-                        ></textarea>
-                        <button id="generate-btn" class="generate-btn" type="button">
-                            <span class="btn-icon">✨</span>
-                            <span class="btn-text">Generate App</span>
+                </section>
+
+                <!-- CTA Section -->
+                <section class="cta-section">
+                    <div class="cta-container">
+                        <h3>Ready to build?</h3>
+                        <p>Start with a prompt or connect your GitHub account</p>
+                        <button class="btn-primary btn-large" id="get-started-btn">
+                            <span>Get Started</span>
                         </button>
                     </div>
+                </section>
+            </div>
+
+            <!-- Dashboard View (After Auth) -->
+            <div id="dashboard-view" class="dashboard-view hidden">
+                <!-- Left Sidebar -->
+                <aside class="sidebar">
+                    <div class="sidebar-header">
+                        <h3>Spaces</h3>
+                        <button class="btn-icon" id="new-space-btn" title="Create Space">
+                            <span>➕</span>
+                        </button>
+                    </div>
+                    <div class="spaces-list" id="spaces-list">
+                        <!-- Spaces will be populated here -->
+                    </div>
+                    <div class="sidebar-footer">
+                        <button class="btn-secondary" id="logout-btn" style="width: 100%;">
+                            <span>Sign Out</span>
+                        </button>
+                    </div>
+                </aside>
+
+                <!-- Main Content Area -->
+                <div class="content-wrapper">
+                    <!-- Input Section -->
+                    <section class="input-section">
+                        <div class="input-container">
+                            <label for="prompt-input" class="input-label" id="input-label">
+                                What would you like to build?
+                            </label>
+                            
+                            <div class="input-group">
+                                <textarea 
+                                    id="prompt-input" 
+                                    class="prompt-input" 
+                                    placeholder="Describe your web app idea... (e.g., 'Create a todo app with drag and drop functionality')"
+                                    rows="3"
+                                ></textarea>
+                                <button id="generate-btn" class="generate-btn" type="button">
+                                    <span class="btn-icon">✨</span>
+                                    <span class="btn-text">Generate App</span>
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Content Area -->
+                    <div class="content-area">
+                        <!-- Left Sidebar - Projects -->
+                        <section class="sidebar-section">
+                            <div class="panel projects-panel">
+                                <div class="panel-header">
+                                    <h2 class="panel-title">
+                                        <span class="panel-icon">📁</span>
+                                        Projects
+                                    </h2>
+                                    <div class="panel-controls">
+                                        <button id="refresh-projects-btn" class="control-btn" title="Refresh Projects">
+                                            <span>🔄</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="panel-content">
+                                    <div class="projects-list" id="projects-list">
+                                        <div class="projects-loading" id="projects-loading">
+                                            <span class="loading-icon">⏳</span>
+                                            <span>Loading projects...</span>
+                                        </div>
+                                        <div class="projects-empty hidden" id="projects-empty">
+                                            <span class="empty-icon">📂</span>
+                                            <span>No projects yet</span>
+                                            <small>Generate your first project above!</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Right Main Area - Preview -->
+                        <section class="preview-section">
+                            <div class="preview-header">
+                                <h2 class="preview-title">
+                                    <span class="preview-icon">🖥️</span>
+                                    Live Preview
+                                </h2>
+                                <div class="preview-controls">
+                                    <button id="refresh-btn" class="control-btn" title="Refresh Preview">
+                                        <span>🔄</span>
+                                    </button>
+                                    <button id="fullscreen-btn" class="control-btn" title="Open in New Tab">
+                                        <span>🔗</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="preview-content">
+                                <iframe 
+                                    id="preview-iframe" 
+                                    class="preview-iframe"
+                                    src="about:blank"
+                                    title="Generated App Preview"
+                                ></iframe>
+                                <div class="preview-placeholder" id="preview-placeholder">
+                                    <div class="placeholder-content">
+                                        <div class="placeholder-icon">🎨</div>
+                                        <h3>Your app will appear here</h3>
+                                        <p>Generate an app to see the live preview</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Generation Progress Panel -->
+                        <section class="progress-section">
+                            <div class="panel progress-panel full-width">
+                                <div class="panel-header">
+                                    <h2 class="panel-title">
+                                        <span class="panel-icon">📋</span>
+                                        Generation Progress
+                                    </h2>
+                                    <div class="progress-status" id="progress-status">Ready</div>
+                                </div>
+                                <div class="panel-content">
+                                    <div class="progress-log" id="progress-log">
+                                        <div class="log-entry welcome">
+                                            <span class="log-icon">👋</span>
+                                            <span class="log-text">Welcome! Enter your app idea and click "Generate App" to get started.</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Verbose Logs -->
+                        <section class="verbose-log-section">
+                            <div class="verbose-log-header">
+                                <h2 class="verbose-log-title">
+                                    <span class="verbose-log-icon">🔍</span>
+                                    Verbose Logs
+                                </h2>
+                                <div class="verbose-log-controls">
+                                    <button id="toggle-logs-btn" class="control-btn" title="Toggle Logs">
+                                        <span id="toggle-logs-icon">▼</span>
+                                    </button>
+                                    <button id="clear-logs-btn" class="control-btn" title="Clear Logs">
+                                        <span>🗑️</span>
+                                    </button>
+                                    <button id="copy-logs-btn" class="control-btn" title="Copy Logs">
+                                        <span>📋</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="verbose-log-content collapsed" id="verbose-log-content">
+                                <textarea 
+                                    id="verbose-log" 
+                                    class="verbose-log-textarea" 
+                                    readonly
+                                    placeholder="Verbose generation logs and error messages will appear here..."
+                                ></textarea>
+                            </div>
+                        </section>
+                    </div>
                 </div>
-            </section>
-
-            <!-- Content Area -->
-            <div class="content-area">
-                <!-- Left Sidebar - Projects Only -->
-                <section class="sidebar-section">
-                    <!-- Projects Panel -->
-                    <div class="panel projects-panel">
-                        <div class="panel-header">
-                            <h2 class="panel-title">
-                                <span class="panel-icon">📁</span>
-                                Generated Projects
-                            </h2>
-                            <div class="panel-controls">
-                                <button id="new-project-btn" class="control-btn new-project-btn" title="Start New Project">
-                                    <span>➕</span>
-                                </button>
-                                <button id="refresh-projects-btn" class="control-btn" title="Refresh Projects">
-                                    <span>🔄</span>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="panel-content">
-                            <div class="projects-list" id="projects-list">
-                                <div class="projects-loading" id="projects-loading">
-                                    <span class="loading-icon">⏳</span>
-                                    <span>Loading projects...</span>
-                                </div>
-                                <div class="projects-empty hidden" id="projects-empty">
-                                    <span class="empty-icon">📂</span>
-                                    <span>No projects yet</span>
-                                    <small>Generate your first project above!</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Right Main Area - Preview -->
-                <section class="preview-section">
-                    <div class="preview-header">
-                        <h2 class="preview-title">
-                            <span class="preview-icon">🖥️</span>
-                            Live Preview
-                        </h2>
-                        <div class="preview-controls">
-                            <button id="refresh-btn" class="control-btn" title="Refresh Preview">
-                                <span>🔄</span>
-                            </button>
-                            <button id="fullscreen-btn" class="control-btn" title="Open in New Tab">
-                                <span>🔗</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="preview-content">
-                        <iframe 
-                            id="preview-iframe" 
-                            class="preview-iframe"
-                            src="about:blank"
-                            title="Generated App Preview"
-                        ></iframe>
-                        <div class="preview-placeholder" id="preview-placeholder">
-                            <div class="placeholder-content">
-                                <div class="placeholder-icon">🎨</div>
-                                <h3>Your app will appear here</h3>
-                                <p>Generate an app to see the live preview</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Generation Progress Panel - Moved Here -->
-                <section class="progress-section">
-                    <div class="panel progress-panel full-width">
-                        <div class="panel-header">
-                            <h2 class="panel-title">
-                                <span class="panel-icon">📋</span>
-                                Generation Progress
-                            </h2>
-                            <div class="progress-status" id="progress-status">Ready</div>
-                        </div>
-                        <div class="panel-content">
-                            <div class="progress-log" id="progress-log">
-                                <div class="log-entry welcome">
-                                    <span class="log-icon">👋</span>
-                                    <span class="log-text">Welcome! Enter your app idea and click "Generate App" to get started.</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Bottom Full Width - Verbose Logs -->
-                <section class="verbose-log-section">
-                    <div class="verbose-log-header">
-                        <h2 class="verbose-log-title">
-                            <span class="verbose-log-icon">🔍</span>
-                            Verbose Logs
-                        </h2>
-                        <div class="verbose-log-controls">
-                            <button id="toggle-logs-btn" class="control-btn" title="Toggle Logs">
-                                <span id="toggle-logs-icon">▼</span>
-                            </button>
-                            <button id="clear-logs-btn" class="control-btn" title="Clear Logs">
-                                <span>🗑️</span>
-                            </button>
-                            <button id="copy-logs-btn" class="control-btn" title="Copy Logs">
-                                <span>📋</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="verbose-log-content collapsed" id="verbose-log-content">
-                        <textarea 
-                            id="verbose-log" 
-                            class="verbose-log-textarea" 
-                            readonly
-                            placeholder="Verbose generation logs and error messages will appear here..."
-                        ></textarea>
-                    </div>
-                </section>
             </div>
         </main>
 
         <!-- Loading Overlay -->
         <div class="loading-overlay" id="loading-overlay">
             <div class="loading-spinner"></div>
-            <p class="loading-text">Generating your app...</p>
+            <p class="loading-text">Processing...</p>
+        </div>
+
+        <!-- Auth Modal -->
+        <div class="modal-overlay hidden" id="auth-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">
+                        <span class="modal-icon">⚡</span>
+                        Sign In to Fusion
+                    </h2>
+                    <button id="auth-modal-close-btn" class="modal-close-btn" title="Close">
+                        <span>✕</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="auth-form">
+                        <div class="form-group">
+                            <label for="auth-email" class="form-label">Email</label>
+                            <input type="email" id="auth-email" class="form-input" placeholder="your@email.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="auth-password" class="form-label">Password</label>
+                            <input type="password" id="auth-password" class="form-input" placeholder="Enter your password">
+                        </div>
+                        <button id="auth-submit-btn" class="btn-primary" style="width: 100%;">
+                            <span>Sign In</span>
+                        </button>
+                        <p class="auth-helper">Demo: coinkrazy26@gmail.com / admin123</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GitHub Import Modal -->
+        <div class="modal-overlay hidden" id="github-import-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">
+                        <span class="modal-icon">🔗</span>
+                        Import from GitHub
+                    </h2>
+                    <button id="github-modal-close-btn" class="modal-close-btn" title="Close">
+                        <span>✕</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="github-form">
+                        <div class="form-group">
+                            <label for="github-url" class="form-label">GitHub Repository URL</label>
+                            <input type="text" id="github-url" class="form-input" placeholder="https://github.com/username/repo">
+                        </div>
+                        <div class="form-group">
+                            <label for="github-branch" class="form-label">Branch (optional)</label>
+                            <input type="text" id="github-branch" class="form-input" placeholder="main" value="main">
+                        </div>
+                        <button id="github-import-btn" class="btn-primary" style="width: 100%;">
+                            <span>Import Repository</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Info Modal -->
@@ -195,8 +326,8 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h2 class="modal-title">
-                        <span class="modal-icon">🚀</span>
-                        About Lovable Clone
+                        <span class="modal-icon">⚡</span>
+                        About Fusion
                     </h2>
                     <button id="modal-close-btn" class="modal-close-btn" title="Close">
                         <span>✕</span>
@@ -204,88 +335,40 @@
                 </div>
                 <div class="modal-body">
                     <div class="info-section">
-                        <h3 class="section-title">🤖 What is Lovable Clone?</h3>
+                        <h3 class="section-title">🤖 What is Fusion?</h3>
                         <p class="section-text">
-                            Lovable Clone is an AI-powered web application builder that transforms your ideas into functional web apps using natural language. 
-                            Powered by Claude Sonnet 4 and the Claude Code SDK, it generates modern, professional-quality code instantly.
+                            Fusion is a collaborative workspace for code. Generate production-ready web apps from natural language, 
+                            import existing GitHub repositories, and deploy with confidence. Built on Claude Code SDK for seamless AI collaboration.
                         </p>
                     </div>
 
                     <div class="info-section">
-                        <h3 class="section-title">✨ Main Features</h3>
+                        <h3 class="section-title">✨ Features</h3>
                         <ul class="feature-list">
-                            <li><strong>Natural Language Generation:</strong> Describe your app idea and watch it come to life</li>
-                            <li><strong>Iterative Development:</strong> Select existing projects to modify and extend them</li>
-                            <li><strong>Real-time Preview:</strong> See your generated apps running instantly in the browser</li>
-                            <li><strong>Project Memory:</strong> Each project remembers its development history for better continuations</li>
-                            <li><strong>Modern Tech Stack:</strong> Generates HTML5, CSS3, JavaScript/TypeScript with best practices</li>
-                            <li><strong>Comprehensive Logging:</strong> Full visibility into the generation process with verbose logs</li>
-                            <li><strong>Dark Modern UI:</strong> Beautiful, responsive interface with glassmorphism effects</li>
+                            <li><strong>AI Generation:</strong> Create apps from natural language prompts</li>
+                            <li><strong>GitHub Integration:</strong> Import, develop, and push back to GitHub</li>
+                            <li><strong>Team Spaces:</strong> Organize up to 10 spaces per organization</li>
+                            <li><strong>Live Preview:</strong> Real-time code preview in containerized environment</li>
+                            <li><strong>Deploy Instantly:</strong> Deploy to custom domains with one click</li>
+                            <li><strong>Database Integration:</strong> Connect Neon DB or Supabase</li>
+                            <li><strong>Visual Builder:</strong> Drag-and-drop component editor</li>
                         </ul>
                     </div>
 
                     <div class="info-section">
-                        <h3 class="section-title">🔧 How to Use</h3>
+                        <h3 class="section-title">🚀 Getting Started</h3>
                         <ol class="steps-list">
-                            <li><strong>Create New Project:</strong> Enter your app idea in the text box and click "Generate App"</li>
-                            <li><strong>Watch Progress:</strong> Monitor generation progress in the left sidebar with real-time updates</li>
-                            <li><strong>Preview Results:</strong> Your generated app loads automatically in the preview iframe</li>
-                            <li><strong>Continue Building:</strong> Select any project from the list to add features or modifications</li>
-                            <li><strong>Debug & Learn:</strong> Use verbose logs to understand the generation process</li>
+                            <li><strong>Create Project:</strong> Write a prompt or import from GitHub</li>
+                            <li><strong>Build:</strong> Use AI, visual builder, or terminal to develop</li>
+                            <li><strong>Preview:</strong> See changes in real-time</li>
+                            <li><strong>Deploy:</strong> Push to GitHub and deploy to production</li>
                         </ol>
-                    </div>
-
-                    <div class="info-section">
-                        <h3 class="section-title">🎯 Example Projects</h3>
-                        <div class="examples-grid">
-                            <div class="example-item">
-                                <strong>🎮 Games:</strong> Tic-tac-toe, Chess, Snake, Puzzle games
-                            </div>
-                            <div class="example-item">
-                                <strong>📱 Apps:</strong> Todo lists, Calculators, Weather apps, Note-taking
-                            </div>
-                            <div class="example-item">
-                                <strong>🎨 UI Components:</strong> Forms, Dashboards, Landing pages, Portfolios
-                            </div>
-                            <div class="example-item">
-                                <strong>🛠️ Utilities:</strong> Text processors, Data visualizers, API demos
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="info-section">
-                        <h3 class="section-title">⚡ Technical Specifications</h3>
-                        <div class="tech-specs">
-                            <div class="spec-item">
-                                <strong>AI Model:</strong> Claude Sonnet 4 (claude-sonnet-4-20250514)
-                            </div>
-                            <div class="spec-item">
-                                <strong>Generation Time:</strong> 30 seconds - 5 minutes depending on complexity
-                            </div>
-                            <div class="spec-item">
-                                <strong>Success Rate:</strong> >95% for well-defined prompts
-                            </div>
-                            <div class="spec-item">
-                                <strong>Output Quality:</strong> Modern, clean code with best practices
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="info-section">
-                        <h3 class="section-title">💡 Pro Tips</h3>
-                        <ul class="tips-list">
-                            <li>Be specific about your requirements (colors, layout, functionality)</li>
-                            <li>Use the project continuation feature to build complex apps incrementally</li>
-                            <li>Check verbose logs if generation doesn't work as expected</li>
-                            <li>Try different phrasings if your first attempt needs refinement</li>
-                            <li>Experiment with various project types to explore the full capabilities</li>
-                        </ul>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="/script.js"></script>
 </body>
 </html>

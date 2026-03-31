@@ -1,822 +1,624 @@
-class LovableClone {
+class FusionApp {
     constructor() {
+        this.currentUser = null;
+        this.currentSpace = null;
         this.currentGenerationId = null;
         this.pollInterval = null;
         this.selectedProject = null;
         this.projects = [];
+        this.spaces = [];
         this.init();
     }
 
     init() {
         this.bindEvents();
-        // Initialize verbose logs as collapsed
+        this.checkAuth();
         this.initializeVerboseLogs();
-        // Use setTimeout to ensure DOM is fully ready
-        setTimeout(() => {
-            this.loadExistingProjects();
-        }, 100);
     }
+
+    // ============================================
+    // EVENT BINDING
+    // ============================================
 
     bindEvents() {
-        const generateBtn = document.getElementById('generate-btn');
-        const refreshBtn = document.getElementById('refresh-btn');
-        const fullscreenBtn = document.getElementById('fullscreen-btn');
-        const clearLogsBtn = document.getElementById('clear-logs-btn');
-        const copyLogsBtn = document.getElementById('copy-logs-btn');
-        const refreshProjectsBtn = document.getElementById('refresh-projects-btn');
-        const clearSelectionBtn = document.getElementById('clear-selection-btn');
-        const infoBtn = document.getElementById('info-btn');
-        const modalCloseBtn = document.getElementById('modal-close-btn');
-        const infoModal = document.getElementById('info-modal');
-        const newProjectBtn = document.getElementById('new-project-btn');
-        const toggleLogsBtn = document.getElementById('toggle-logs-btn');
-        const promptInput = document.getElementById('prompt-input');
+        // Homepage buttons
+        document.getElementById('create-project-btn')?.addEventListener('click', () => this.showAuthIfNeeded(() => this.switchView('dashboard')));
+        document.getElementById('import-github-btn')?.addEventListener('click', () => this.showAuthIfNeeded(() => this.openGitHubModal()));
+        document.getElementById('get-started-btn')?.addEventListener('click', () => this.showAuthIfNeeded(() => this.switchView('dashboard')));
 
-        generateBtn.addEventListener('click', () => this.handleGenerate());
-        refreshBtn.addEventListener('click', () => this.refreshPreview());
-        fullscreenBtn.addEventListener('click', () => this.openInNewTab());
-        clearLogsBtn.addEventListener('click', () => this.clearVerboseLogs());
-        copyLogsBtn.addEventListener('click', () => this.copyVerboseLogs());
-        refreshProjectsBtn.addEventListener('click', () => this.loadProjects());
-        clearSelectionBtn.addEventListener('click', () => this.clearProjectSelection());
-        infoBtn.addEventListener('click', () => this.openInfoModal());
-        modalCloseBtn.addEventListener('click', () => this.closeInfoModal());
-        newProjectBtn.addEventListener('click', () => this.clearProjectSelection());
-        toggleLogsBtn.addEventListener('click', () => this.toggleVerboseLogs());
-        
-        // Close modal when clicking outside
-        infoModal.addEventListener('click', (e) => {
-            if (e.target === infoModal) {
-                this.closeInfoModal();
-            }
+        // Auth buttons
+        document.getElementById('auth-btn')?.addEventListener('click', () => this.openAuthModal());
+        document.getElementById('auth-submit-btn')?.addEventListener('click', () => this.handleLogin());
+        document.getElementById('auth-modal-close-btn')?.addEventListener('click', () => this.closeAuthModal());
+        document.getElementById('logout-btn')?.addEventListener('click', () => this.handleLogout());
+
+        // GitHub import
+        document.getElementById('github-modal-close-btn')?.addEventListener('click', () => this.closeGitHubModal());
+        document.getElementById('github-import-btn')?.addEventListener('click', () => this.handleGitHubImport());
+
+        // Info modal
+        document.getElementById('info-btn')?.addEventListener('click', () => this.openInfoModal());
+        document.getElementById('modal-close-btn')?.addEventListener('click', () => this.closeInfoModal());
+        document.getElementById('info-modal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'info-modal') this.closeInfoModal();
         });
-        
-        // Close modal with Escape key
+
+        // Dashboard elements
+        document.getElementById('generate-btn')?.addEventListener('click', () => this.handleGenerate());
+        document.getElementById('refresh-btn')?.addEventListener('click', () => this.refreshPreview());
+        document.getElementById('fullscreen-btn')?.addEventListener('click', () => this.openInNewTab());
+        document.getElementById('clear-logs-btn')?.addEventListener('click', () => this.clearVerboseLogs());
+        document.getElementById('copy-logs-btn')?.addEventListener('click', () => this.copyVerboseLogs());
+        document.getElementById('refresh-projects-btn')?.addEventListener('click', () => this.loadProjects());
+        document.getElementById('toggle-logs-btn')?.addEventListener('click', () => this.toggleVerboseLogs());
+        document.getElementById('new-space-btn')?.addEventListener('click', () => this.createNewSpace());
+
+        // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !infoModal.classList.contains('hidden')) {
+            if (e.key === 'Escape' && !document.getElementById('auth-modal')?.classList.contains('hidden')) {
+                this.closeAuthModal();
+            }
+            if (e.key === 'Escape' && !document.getElementById('info-modal')?.classList.contains('hidden')) {
                 this.closeInfoModal();
             }
-        });
-        
-        // Allow Enter to submit (no Shift required)
-        promptInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                this.handleGenerate();
+            if (e.key === 'Escape' && !document.getElementById('github-import-modal')?.classList.contains('hidden')) {
+                this.closeGitHubModal();
             }
         });
-    }
 
-    initializeVerboseLogs() {
-        const verboseLogContent = document.getElementById('verbose-log-content');
-        const toggleIcon = document.getElementById('toggle-logs-icon');
-        
-        if (verboseLogContent && toggleIcon) {
-            // Start with logs collapsed
-            verboseLogContent.classList.add('collapsed');
-            toggleIcon.textContent = '▶';
+        // Prompt input enter key
+        const promptInput = document.getElementById('prompt-input');
+        if (promptInput) {
+            promptInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.handleGenerate();
+                }
+            });
         }
     }
+
+    // ============================================
+    // AUTHENTICATION
+    // ============================================
+
+    checkAuth() {
+        const token = localStorage.getItem('fusionToken');
+        if (token) {
+            // Verify token is valid (in real app, would validate with backend)
+            const userData = localStorage.getItem('fusionUser');
+            if (userData) {
+                this.currentUser = JSON.parse(userData);
+                this.switchView('dashboard');
+                this.loadSpaces();
+            } else {
+                this.switchView('homepage');
+            }
+        } else {
+            this.switchView('homepage');
+        }
+    }
+
+    openAuthModal() {
+        document.getElementById('auth-modal')?.classList.remove('hidden');
+    }
+
+    closeAuthModal() {
+        document.getElementById('auth-modal')?.classList.add('hidden');
+        document.getElementById('auth-email').value = '';
+        document.getElementById('auth-password').value = '';
+    }
+
+    async handleLogin() {
+        const email = document.getElementById('auth-email')?.value || '';
+        const password = document.getElementById('auth-password')?.value || '';
+
+        if (!email || !password) {
+            this.showError('Please enter email and password');
+            return;
+        }
+
+        this.setLoading(true);
+
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                this.showError(data.error || 'Login failed');
+                return;
+            }
+
+            const data = await response.json();
+            localStorage.setItem('fusionToken', data.token);
+            localStorage.setItem('fusionUser', JSON.stringify(data.user));
+
+            this.currentUser = data.user;
+            this.closeAuthModal();
+            this.switchView('dashboard');
+            this.loadSpaces();
+            this.showSuccess('Signed in successfully!');
+        } catch (error) {
+            console.error('Login error:', error);
+            this.showError('Login failed. Please try again.');
+        } finally {
+            this.setLoading(false);
+        }
+    }
+
+    handleLogout() {
+        localStorage.removeItem('fusionToken');
+        localStorage.removeItem('fusionUser');
+        this.currentUser = null;
+        this.currentSpace = null;
+        this.switchView('homepage');
+    }
+
+    showAuthIfNeeded(callback) {
+        if (!this.currentUser) {
+            this.openAuthModal();
+            // Store callback to execute after login
+            window.postLoginCallback = callback;
+        } else {
+            callback();
+        }
+    }
+
+    // ============================================
+    // VIEW MANAGEMENT
+    // ============================================
+
+    switchView(viewName) {
+        const homepageView = document.getElementById('homepage-view');
+        const dashboardView = document.getElementById('dashboard-view');
+
+        if (viewName === 'homepage') {
+            homepageView?.classList.remove('hidden');
+            dashboardView?.classList.add('hidden');
+        } else {
+            homepageView?.classList.add('hidden');
+            dashboardView?.classList.remove('hidden');
+            
+            // If callback was pending (from login), execute it
+            if (window.postLoginCallback) {
+                window.postLoginCallback();
+                window.postLoginCallback = null;
+            }
+        }
+    }
+
+    // ============================================
+    // SPACES MANAGEMENT
+    // ============================================
+
+    async loadSpaces() {
+        try {
+            const token = localStorage.getItem('fusionToken');
+            const response = await fetch('/api/spaces', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!response.ok) throw new Error('Failed to load spaces');
+
+            const data = await response.json();
+            this.spaces = data.spaces || [];
+
+            if (this.spaces.length === 0) {
+                // Create default space if none exist
+                await this.createNewSpace();
+            } else {
+                this.renderSpaces();
+                this.selectSpace(this.spaces[0]);
+            }
+        } catch (error) {
+            console.error('Error loading spaces:', error);
+            this.showError('Failed to load spaces');
+        }
+    }
+
+    renderSpaces() {
+        const spacesList = document.getElementById('spaces-list');
+        if (!spacesList) return;
+
+        spacesList.innerHTML = this.spaces.map(space => `
+            <div class="space-item ${space.id === this.currentSpace?.id ? 'active' : ''}" data-space-id="${space.id}">
+                <div style="font-weight: 500;">${space.name}</div>
+                <small>${space.projects?.length || 0} project(s)</small>
+            </div>
+        `).join('');
+
+        // Add click handlers
+        spacesList.querySelectorAll('.space-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const spaceId = item.getAttribute('data-space-id');
+                const space = this.spaces.find(s => s.id === spaceId);
+                if (space) this.selectSpace(space);
+            });
+        });
+    }
+
+    selectSpace(space) {
+        this.currentSpace = space;
+        this.renderSpaces();
+        this.loadProjects();
+    }
+
+    async createNewSpace() {
+        if (this.spaces.length >= 10) {
+            this.showError('Maximum 10 spaces allowed');
+            return;
+        }
+
+        const spaceName = prompt('Enter space name:');
+        if (!spaceName) return;
+
+        try {
+            const token = localStorage.getItem('fusionToken');
+            const response = await fetch('/api/spaces', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ name: spaceName })
+            });
+
+            if (!response.ok) throw new Error('Failed to create space');
+
+            const newSpace = await response.json();
+            this.spaces.push(newSpace);
+            this.renderSpaces();
+            this.selectSpace(newSpace);
+            this.showSuccess(`Space "${spaceName}" created!`);
+        } catch (error) {
+            console.error('Error creating space:', error);
+            this.showError('Failed to create space');
+        }
+    }
+
+    // ============================================
+    // PROJECTS MANAGEMENT
+    // ============================================
+
+    async loadProjects() {
+        try {
+            const response = await fetch('/api/projects');
+            const data = await response.json();
+            this.projects = data.projects || [];
+            this.renderProjects();
+        } catch (error) {
+            console.error('Error loading projects:', error);
+            this.addVerboseLog('error', 'Failed to load projects: ' + error.message);
+        }
+    }
+
+    renderProjects() {
+        const projectsList = document.getElementById('projects-list');
+        if (!projectsList) return;
+
+        const loading = projectsList.querySelector('.projects-loading');
+        const empty = projectsList.querySelector('.projects-empty');
+
+        if (this.projects.length === 0) {
+            loading?.classList.add('hidden');
+            empty?.classList.remove('hidden');
+        } else {
+            loading?.classList.add('hidden');
+            empty?.classList.add('hidden');
+
+            const projectsHtml = this.projects.map(project => `
+                <div class="project-item ${project.name === this.selectedProject?.name ? 'selected' : ''}" data-project="${project.name}">
+                    <div class="project-name" title="${project.name}">${project.name}</div>
+                    <div class="project-details">${project.fileCount} files • ${new Date(project.createdAt).toLocaleDateString()}</div>
+                </div>
+            `).join('');
+
+            projectsList.innerHTML = projectsHtml;
+
+            projectsList.querySelectorAll('.project-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const projectName = item.getAttribute('data-project');
+                    const project = this.projects.find(p => p.name === projectName);
+                    if (project) this.selectProject(project);
+                });
+            });
+        }
+    }
+
+    selectProject(project) {
+        this.selectedProject = project;
+        this.renderProjects();
+        if (project.url) {
+            this.loadProjectPreview(project.url);
+        }
+        this.updateGenerateButton();
+    }
+
+    updateGenerateButton() {
+        const btn = document.getElementById('generate-btn');
+        const label = document.getElementById('input-label');
+        const input = document.getElementById('prompt-input');
+
+        if (this.selectedProject) {
+            btn.innerHTML = '<span class="btn-icon">🔄</span><span class="btn-text">Continue Building</span>';
+            label.textContent = 'What would you like to add or modify?';
+            input.placeholder = `Describe changes to ${this.selectedProject.name}... (e.g., 'Add dark mode', 'Fix bugs on the dashboard')`;
+        } else {
+            btn.innerHTML = '<span class="btn-icon">✨</span><span class="btn-text">Generate App</span>';
+            label.textContent = 'What would you like to build?';
+            input.placeholder = "Describe your web app idea... (e.g., 'Create a todo app with drag and drop functionality')";
+        }
+    }
+
+    // ============================================
+    // GENERATION & PREVIEW
+    // ============================================
 
     async handleGenerate() {
         const promptInput = document.getElementById('prompt-input');
         const prompt = promptInput.value.trim();
 
         if (!prompt) {
-            this.addLogEntry('error', '⚠️ Please enter a prompt first');
+            this.showError('Please enter a prompt');
             return;
         }
 
-        this.setGenerating(true);
-        this.clearPreview();
-        this.addLogEntry('info', `🚀 Starting generation: "${prompt}"`);
-        this.addVerboseLog(`Starting generation request for prompt: "${prompt}"`);
+        this.setLoading(true);
+        this.addLogEntry('info', `🚀 Starting generation${this.selectedProject ? ' (continuing)' : ''}`);
+        this.addVerboseLog('info', `Generation request: "${prompt}"`);
 
         try {
-            const requestBody = { prompt };
-            
-            // Add project continuation info if a project is selected
-            if (this.selectedProject) {
-                requestBody.continueFromProject = this.selectedProject.name;
-                this.addVerboseLog(`Continuing work on project: ${this.selectedProject.name}`);
-            }
-            
-            this.addVerboseLog('Sending POST request to /api/generate');
             const response = await fetch('/api/generate', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestBody)
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    prompt,
+                    continueFromProject: this.selectedProject?.name || null
+                })
             });
 
             const data = await response.json();
-            this.addVerboseLog(`Server response: ${JSON.stringify(data, null, 2)}`);
-
-            if (response.ok) {
+            if (data.generationId) {
                 this.currentGenerationId = data.generationId;
-                this.addLogEntry('success', '✅ Generation started successfully');
-                this.addVerboseLog(`Generation started with ID: ${data.generationId}`);
-                this.startPolling();
+                this.pollGenerationStatus();
             } else {
-                throw new Error(data.error || 'Failed to start generation');
+                this.showError(data.error || 'Generation failed');
             }
         } catch (error) {
-            this.addLogEntry('error', `❌ Error: ${error.message}`);
-            this.addVerboseLog(`Error in handleGenerate: ${error.message}`, true);
-            this.setGenerating(false);
+            console.error('Generation error:', error);
+            this.showError('Failed to start generation');
+            this.addVerboseLog('error', 'Generation error: ' + error.message);
+        } finally {
+            this.setLoading(false);
         }
     }
 
-    startPolling() {
-        if (this.pollInterval) {
-            clearInterval(this.pollInterval);
-        }
+    pollGenerationStatus() {
+        if (this.pollInterval) clearInterval(this.pollInterval);
 
         this.pollInterval = setInterval(async () => {
-            if (!this.currentGenerationId) return;
-
             try {
-                this.addVerboseLog(`Polling status for generation ID: ${this.currentGenerationId}`);
                 const response = await fetch(`/api/status/${this.currentGenerationId}`);
-                const data = await response.json();
-                this.addVerboseLog(`Status response: ${JSON.stringify(data, null, 2)}`);
+                const status = await response.json();
 
-                if (response.ok) {
-                    this.updateProgress(data);
-                    
-                    if (data.status === 'completed' || data.status === 'error') {
-                        this.addVerboseLog(`Generation finished with status: ${data.status}`);
-                        this.stopPolling();
-                        this.setGenerating(false);
-                        
-                        if (data.status === 'completed' && data.projectPath) {
-                            this.addVerboseLog(`Loading project from: ${data.projectPath}`);
-                            await this.loadProject(data.projectPath);
-                            // Refresh project list to show the new project
-                            await this.loadProjects();
-                            
-                            // Clear the input prompt after completion
-                            const promptInput = document.getElementById('prompt-input');
-                            if (promptInput) {
-                                promptInput.value = '';
-                                this.addVerboseLog('Cleared input prompt after successful completion');
-                            }
+                if (status.progress) {
+                    status.progress.forEach(entry => {
+                        if (entry.type === 'info') {
+                            this.addLogEntry('info', entry.message);
+                        } else if (entry.type === 'success') {
+                            this.addLogEntry('success', entry.message);
+                        } else if (entry.type === 'error') {
+                            this.addLogEntry('error', entry.message);
                         }
-                    }
-                } else {
-                    this.addVerboseLog(`Status request failed: ${response.status} ${response.statusText}`, true);
+                    });
+                }
+
+                if (status.verboseLogs) {
+                    status.verboseLogs.forEach(log => {
+                        this.addVerboseLog(log.type || 'info', log.message || log);
+                    });
+                }
+
+                const statusEl = document.getElementById('progress-status');
+                if (statusEl) {
+                    statusEl.textContent = status.status === 'complete' ? 'Complete!' : 'Generating...';
+                }
+
+                if (status.status === 'complete' && status.projectPath) {
+                    clearInterval(this.pollInterval);
+                    this.addLogEntry('success', '✅ Generation complete!');
+                    this.addVerboseLog('success', 'Project generated successfully');
+                    
+                    document.getElementById('prompt-input').value = '';
+                    this.selectedProject = null;
+                    this.updateGenerateButton();
+                    
+                    // Reload projects to show the new one
+                    setTimeout(() => this.loadProjects(), 1000);
                 }
             } catch (error) {
-                this.addVerboseLog(`Polling error: ${error.message}`, true);
-                console.error('Polling error:', error);
+                console.error('Poll error:', error);
+                this.addVerboseLog('error', 'Status poll error: ' + error.message);
             }
-        }, 2000); // Poll every 2 seconds
+        }, 2000);
     }
 
-    stopPolling() {
-        if (this.pollInterval) {
-            clearInterval(this.pollInterval);
-            this.pollInterval = null;
-        }
-    }
-
-    updateProgress(data) {
-        const statusElement = document.getElementById('progress-status');
-        
-        // Update status badge
-        statusElement.textContent = this.formatStatus(data.status);
-        statusElement.className = `progress-status ${data.status}`;
-
-        // Add new progress entries
-        if (data.progress && data.progress.length > 0) {
-            const logContainer = document.getElementById('progress-log');
-            const existingEntries = logContainer.children.length;
-            
-            // Add only new entries
-            for (let i = existingEntries - 1; i < data.progress.length; i++) {
-                const entry = data.progress[i];
-                if (entry) {
-                    this.addLogEntry(entry.type, entry.message, false);
-                }
-            }
-        }
-
-        // Update verbose logs from backend
-        if (data.verboseLogs && data.verboseLogs.length > 0) {
-            const verboseLog = document.getElementById('verbose-log');
-            
-            // Clear existing logs and add new ones (simple approach)
-            const newLogContent = data.verboseLogs.map(log => 
-                `${log.timestamp} [${log.level}] ${log.message}`
-            ).join('\n');
-            
-            verboseLog.value = newLogContent;
-            verboseLog.scrollTop = verboseLog.scrollHeight;
-        }
-    }
-
-    async loadProject(projectPath) {
-        try {
-            // Get project info
-            const response = await fetch('/api/projects');
-            const data = await response.json();
-            
-            const project = data.projects.find(p => p.path.includes(projectPath.split('/').pop()));
-            
-            if (project && project.url) {
-                this.showPreview(project.url);
-                this.addLogEntry('success', `🎉 Project loaded: ${project.name}`);
-            } else {
-                this.addLogEntry('error', '❌ Could not find project entry point');
-            }
-        } catch (error) {
-            this.addLogEntry('error', `❌ Error loading project: ${error.message}`);
-        }
-    }
-
-    async loadExistingProjects() {
-        // Call the new loadProjects method
-        try {
-            await this.loadProjects();
-        } catch (error) {
-            console.error('Error in loadExistingProjects:', error);
-        }
-    }
-
-    async loadProjects() {
-        const loadingEl = document.getElementById('projects-loading');
-        const emptyEl = document.getElementById('projects-empty');
-        const listEl = document.getElementById('projects-list');
-        
-        if (!loadingEl || !emptyEl || !listEl) {
-            console.error('Required project list elements not found');
-            return;
-        }
-        
-        // Show loading state
-        loadingEl.classList.remove('hidden');
-        emptyEl.classList.add('hidden');
-        
-        // Clear existing project items
-        const existingItems = listEl.querySelectorAll('.project-item');
-        existingItems.forEach(item => item.remove());
-        
-        try {
-            const response = await fetch('/api/projects');
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            
-            const data = await response.json();
-            this.projects = data.projects || [];
-            
-            // Hide loading
-            loadingEl.classList.add('hidden');
-            
-            if (this.projects.length === 0) {
-                emptyEl.classList.remove('hidden');
-                return;
-            }
-            
-            // Create project items with simple approach
-            this.projects.forEach(project => {
-                try {
-                    // Create simple project element
-                    const projectEl = document.createElement('div');
-                    projectEl.className = 'project-item';
-                    projectEl.style.background = 'rgba(255, 255, 255, 0.08)';
-                    projectEl.style.border = '1px solid rgba(255, 255, 255, 0.15)';
-                    projectEl.style.borderRadius = '12px';
-                    projectEl.style.padding = '1rem';
-                    projectEl.style.marginBottom = '0.75rem';
-                    projectEl.style.cursor = 'pointer';
-                    
-                    // Simple project name (remove timestamp)
-                    const simpleName = project.name
-                        .replace(/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-/, '')
-                        .replace(/-/g, ' ')
-                        .replace(/\b\w/g, l => l.toUpperCase())
-                        .trim() || 'Untitled Project';
-                    
-                    projectEl.innerHTML = `
-                        <div class="project-name" data-full-name="${simpleName}" title="${simpleName}">
-                            ${simpleName}
-                        </div>
-                        <div style="font-size: 0.75rem; color: #94a3b8;">
-                            ${project.fileCount} files
-                        </div>
-                    `;
-                    
-                    // Check if project name is truncated and add class
-                    setTimeout(() => {
-                        const nameEl = projectEl.querySelector('.project-name');
-                        if (nameEl && nameEl.scrollWidth > nameEl.clientWidth) {
-                            nameEl.classList.add('truncated');
-                        }
-                    }, 10);
-                    
-                    // Add click handler
-                    if (project.url && project.fileCount > 0) {
-                        projectEl.addEventListener('click', () => {
-                            // Use the proper selectProject method to handle all UI updates
-                            this.selectProject(project);
-                        });
-                        
-                        // Hover effect
-                        projectEl.addEventListener('mouseenter', () => {
-                            if (!projectEl.classList.contains('selected')) {
-                                projectEl.style.background = 'rgba(255, 255, 255, 0.12)';
-                            }
-                        });
-                        
-                        projectEl.addEventListener('mouseleave', () => {
-                            if (!projectEl.classList.contains('selected')) {
-                                projectEl.style.background = 'rgba(255, 255, 255, 0.08)';
-                            }
-                        });
-                    } else {
-                        projectEl.style.opacity = '0.5';
-                        projectEl.style.cursor = 'not-allowed';
-                        projectEl.title = 'No preview available';
-                    }
-                    
-                    listEl.appendChild(projectEl);
-                } catch (error) {
-                    console.error('Error creating project element:', error, project);
-                }
-            });
-            
-            this.addLogEntry('info', `📂 Loaded ${this.projects.length} project(s)`);
-            
-        } catch (error) {
-            console.error('Error loading projects:', error);
-            loadingEl.classList.add('hidden');
-            emptyEl.classList.remove('hidden');
-            this.addLogEntry('error', `❌ Failed to load projects: ${error.message}`);
-            if (this.addVerboseLog) {
-                this.addVerboseLog(`Error loading projects: ${error.message}`, true);
-            }
-        }
-    }
-
-    createProjectElement(project) {
-        try {
-            const projectEl = document.createElement('div');
-            projectEl.className = 'project-item';
-            projectEl.dataset.projectName = project.name;
-            
-            // Skip projects with no files
-            if (project.fileCount === 0) {
-                projectEl.classList.add('project-empty');
-            }
-            
-            // Extract project type and formatted name with error handling
-            const displayName = this.formatProjectName(project.name);
-            const projectType = this.detectProjectType(project.name);
-            const createdDate = this.formatProjectDate(project);
-            const fileTypes = this.getProjectFileTypes(project);
-        
-        projectEl.innerHTML = `
-            <div class="project-name" data-full-name="${displayName}" title="${displayName}">${displayName}</div>
-            <div class="project-meta">
-                <span class="project-type">${projectType}</span>
-                <span class="project-files" title="${fileTypes}">${project.fileCount} files</span>
-                <span class="project-date">${createdDate}</span>
-            </div>
-        `;
-        
-        // Check if project name is truncated and add class
-        setTimeout(() => {
-            const nameEl = projectEl.querySelector('.project-name');
-            if (nameEl && nameEl.scrollWidth > nameEl.clientWidth) {
-                nameEl.classList.add('truncated');
-            }
-        }, 10);
-        
-        // Add click handler only for projects with files
-        if (project.url && project.fileCount > 0) {
-            projectEl.addEventListener('click', () => {
-                this.selectProject(project);
-            });
-        } else {
-            projectEl.style.opacity = '0.5';
-            projectEl.style.cursor = 'not-allowed';
-            projectEl.title = 'No preview available - project has no files';
-        }
-        
-            return projectEl;
-        } catch (error) {
-            console.error('Error creating project element:', error, project);
-            // Return a simple fallback element
-            const fallbackEl = document.createElement('div');
-            fallbackEl.className = 'project-item';
-            fallbackEl.innerHTML = `<div class="project-name">Error: ${project.name}</div>`;
-            return fallbackEl;
-        }
-    }
-
-    selectProject(project) {
-        // Remove previous selection
-        const previousSelected = document.querySelector('.project-item.selected');
-        if (previousSelected) {
-            previousSelected.classList.remove('selected');
-            // Reset inline styles for previously selected item
-            previousSelected.style.background = 'rgba(255, 255, 255, 0.08)';
-        }
-        
-        // Find and select the clicked project element
-        const projectElements = document.querySelectorAll('.project-item');
-        let projectEl = null;
-        
-        // Find the project element by matching the project name
-        projectElements.forEach(el => {
-            if (el.dataset.projectName === project.name || 
-                (el.textContent && el.textContent.includes(this.formatProjectName(project.name)))) {
-                projectEl = el;
-            }
-        });
-        
-        // Add selection to clicked item
-        if (projectEl) {
-            projectEl.classList.add('selected');
-            projectEl.style.background = 'rgba(102, 126, 234, 0.15)';
-        }
-        
-        // Update selected project state
-        this.selectedProject = project;
-        
-        // Update UI for continue mode (without showing context field)
-        this.updateUIForContinueMode(project);
-        
-        // Load project in preview
-        if (project.url) {
-            this.showPreview(project.url);
-            this.addLogEntry('info', `🖥️ Loading project: ${this.formatProjectName(project.name)}`);
-        } else {
-            this.addLogEntry('error', `❌ No preview available for: ${project.name}`);
-        }
-    }
-
-    updateUIForContinueMode(project) {
-        const inputLabelEl = document.getElementById('input-label');
-        const promptInputEl = document.getElementById('prompt-input');
-        const generateBtnEl = document.getElementById('generate-btn');
-        
-        const displayName = this.formatProjectName(project.name);
-        
-        // Update input label and placeholder
-        if (inputLabelEl) {
-            inputLabelEl.textContent = 'What would you like to add or modify?';
-        }
-        
-        if (promptInputEl) {
-            promptInputEl.placeholder = `Describe changes or additions to ${displayName}... (e.g., 'Add a dark mode toggle' or 'Change the color scheme to blue')`;
-        }
-        
-        // Update button text
-        if (generateBtnEl) {
-            const btnTextEl = generateBtnEl.querySelector('.btn-text');
-            const btnIconEl = generateBtnEl.querySelector('.btn-icon');
-            if (btnTextEl && btnIconEl) {
-                btnIconEl.textContent = '🔄';
-                btnTextEl.textContent = 'Continue Building';
-            }
-        }
-    }
-
-    showProjectContext(project) {
-        const contextEl = document.getElementById('selected-project-context');
-        const projectNameEl = document.getElementById('context-project-name');
-        const projectDetailsEl = document.getElementById('context-project-details');
-        
-        if (contextEl && projectNameEl && projectDetailsEl) {
-            // Show context
-            contextEl.classList.remove('hidden');
-            
-            // Update project info
-            const displayName = this.formatProjectName(project.name);
-            projectNameEl.textContent = displayName;
-            
-            const createdDate = this.formatProjectDate(project);
-            const fileTypes = this.getProjectFileTypes(project);
-            projectDetailsEl.textContent = `${project.fileCount} files (${fileTypes}) • Created ${createdDate}`;
-        }
-        
-        // Use the separate UI update function
-        this.updateUIForContinueMode(project);
-    }
-
-    clearProjectSelection() {
-        // Clear selected project
-        this.selectedProject = null;
-        
-        // Remove visual selection
-        const selectedEl = document.querySelector('.project-item.selected');
-        if (selectedEl) {
-            selectedEl.classList.remove('selected');
-            selectedEl.style.background = 'rgba(255, 255, 255, 0.08)';
-        }
-        
-        // Hide context
-        const contextEl = document.getElementById('selected-project-context');
-        if (contextEl) {
-            contextEl.classList.add('hidden');
-        }
-        
-        // Reset UI elements
-        const inputLabelEl = document.getElementById('input-label');
-        const promptInputEl = document.getElementById('prompt-input');
-        const generateBtnEl = document.getElementById('generate-btn');
-        
-        if (inputLabelEl) {
-            inputLabelEl.textContent = 'What would you like to build?';
-        }
-        
-        if (promptInputEl) {
-            promptInputEl.placeholder = 'Describe your web app idea... (e.g., \'Create a todo app with drag and drop functionality\')';
-        }
-        
-        if (generateBtnEl) {
-            const btnTextEl = generateBtnEl.querySelector('.btn-text');
-            const btnIconEl = generateBtnEl.querySelector('.btn-icon');
-            if (btnTextEl && btnIconEl) {
-                btnIconEl.textContent = '✨';
-                btnTextEl.textContent = 'Generate App';
-            }
-        }
-        
-        // Clear preview
-        this.clearPreview();
-        
-        this.addLogEntry('info', '🆕 Ready to create a new project');
-    }
-
-    openInfoModal() {
-        const modal = document.getElementById('info-modal');
-        if (modal) {
-            modal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden'; // Prevent background scrolling
-        }
-    }
-
-    closeInfoModal() {
-        const modal = document.getElementById('info-modal');
-        if (modal) {
-            modal.classList.add('hidden');
-            document.body.style.overflow = ''; // Restore background scrolling
-        }
-    }
-
-    formatProjectName(name) {
-        // Convert project folder names to readable format
-        return name
-            .replace(/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-/, '') // Remove timestamp prefix
-            .replace(/-/g, ' ')
-            .replace(/\b\w/g, l => l.toUpperCase())
-            .trim() || 'Untitled Project';
-    }
-
-    detectProjectType(name) {
-        const lowerName = name.toLowerCase();
-        if (lowerName.includes('tic-tac-toe') || lowerName.includes('tictactoe')) return 'Game';
-        if (lowerName.includes('chess')) return 'Game';
-        if (lowerName.includes('todo') || lowerName.includes('task')) return 'App';
-        if (lowerName.includes('button') || lowerName.includes('form')) return 'Component';
-        if (lowerName.includes('dashboard') || lowerName.includes('admin')) return 'Dashboard';
-        return 'Web App';
-    }
-
-    extractDateFromName(name) {
-        // Extract date from timestamp prefix (YYYY-MM-DDTHH-MM-SS)
-        const match = name.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})-(\d{2})/);
-        if (match) {
-            const [, year, month, day, hour, minute] = match;
-            const date = new Date(`${year}-${month}-${day}T${hour}:${minute}`);
-            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        }
-        return 'Unknown';
-    }
-
-    formatProjectDate(project) {
-        // Use backend-provided creation date if available
-        if (project.createdAt) {
-            const date = new Date(project.createdAt);
-            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        }
-        // Fallback to extracting from name
-        return this.extractDateFromName(project.name);
-    }
-
-    getProjectFileTypes(project) {
-        // Show file types based on backend metadata
-        if (project.hasFiles) {
-            const types = [];
-            if (project.hasFiles.html) types.push('HTML');
-            if (project.hasFiles.css) types.push('CSS');
-            if (project.hasFiles.js) types.push('JS');
-            if (project.hasFiles.ts) types.push('TS');
-            return types.length > 0 ? types.join(', ') : 'No files';
-        }
-        return 'Unknown';
-    }
-
-    showPreview(url) {
+    loadProjectPreview(url) {
         const iframe = document.getElementById('preview-iframe');
         const placeholder = document.getElementById('preview-placeholder');
-        
-        // Add loading state
-        this.addLogEntry('info', `🔄 Loading preview: ${url}`);
-        
-        // Clear any previous iframe content
-        iframe.src = 'about:blank';
-        
-        // Small delay to ensure clean loading
-        setTimeout(() => {
+
+        if (iframe) {
             iframe.src = url;
-            placeholder.classList.add('hidden');
-            
-            // Handle iframe load with timeout
-            const loadTimeout = setTimeout(() => {
-                this.addLogEntry('warning', '⚠️ Preview taking longer than expected to load');
-            }, 5000);
-            
-            iframe.onload = () => {
-                clearTimeout(loadTimeout);
-                this.addLogEntry('success', '🖥️ Preview loaded successfully');
-                // Ensure iframe has proper focus and rendering
-                iframe.style.visibility = 'visible';
-                
-                // Try to improve iframe content rendering
-                try {
-                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                    if (iframeDoc) {
-                        // Ensure proper viewport if not already set
-                        if (!iframeDoc.querySelector('meta[name="viewport"]')) {
-                            const viewport = iframeDoc.createElement('meta');
-                            viewport.name = 'viewport';
-                            viewport.content = 'width=device-width, initial-scale=1.0';
-                            iframeDoc.head.appendChild(viewport);
-                        }
-                    }
-                } catch (e) {
-                    // Cross-origin or other access restrictions - that's okay
-                    this.addVerboseLog('Note: Cannot modify iframe content (cross-origin or restrictions)');
-                }
-            };
-            
-            iframe.onerror = () => {
-                clearTimeout(loadTimeout);
-                this.addLogEntry('error', '❌ Failed to load preview');
-                placeholder.classList.remove('hidden');
-            };
-        }, 100);
-    }
-
-    clearPreview() {
-        const iframe = document.getElementById('preview-iframe');
-        const placeholder = document.getElementById('preview-placeholder');
-        
-        iframe.src = 'about:blank';
-        placeholder.classList.remove('hidden');
+            placeholder.style.display = 'none';
+        }
     }
 
     refreshPreview() {
         const iframe = document.getElementById('preview-iframe');
-        if (iframe.src && iframe.src !== 'about:blank') {
-            iframe.src = iframe.src; // Force reload
-            this.addLogEntry('info', '🔄 Refreshing preview...');
+        if (iframe) {
+            iframe.src = iframe.src;
         }
     }
 
     openInNewTab() {
         const iframe = document.getElementById('preview-iframe');
-        if (iframe.src && iframe.src !== 'about:blank') {
+        if (iframe && iframe.src !== 'about:blank') {
             window.open(iframe.src, '_blank');
         }
     }
 
-    setGenerating(isGenerating) {
-        const generateBtn = document.getElementById('generate-btn');
-        const loadingOverlay = document.getElementById('loading-overlay');
-        
-        generateBtn.disabled = isGenerating;
-        
-        if (isGenerating) {
-            generateBtn.innerHTML = '<span class=\"btn-icon\">⏳</span><span class=\"btn-text\">Generating...</span>';
-            loadingOverlay.classList.add('active');
-        } else {
-            generateBtn.innerHTML = '<span class=\"btn-icon\">✨</span><span class=\"btn-text\">Generate App</span>';
-            loadingOverlay.classList.remove('active');
+    clearPreview() {
+        const iframe = document.getElementById('preview-iframe');
+        const placeholder = document.getElementById('preview-placeholder');
+        if (iframe) iframe.src = 'about:blank';
+        if (placeholder) placeholder.style.display = 'flex';
+    }
+
+    // ============================================
+    // LOGGING
+    // ============================================
+
+    initializeVerboseLogs() {
+        const verboseLogContent = document.getElementById('verbose-log-content');
+        if (verboseLogContent) {
+            verboseLogContent.classList.add('collapsed');
         }
     }
 
-    addLogEntry(type, message, scroll = true) {
-        const logContainer = document.getElementById('progress-log');
-        
-        // Remove welcome message if it exists
-        const welcomeEntry = logContainer.querySelector('.welcome');
-        if (welcomeEntry) {
-            welcomeEntry.remove();
-        }
-        
+    addLogEntry(type, message) {
+        const progressLog = document.getElementById('progress-log');
+        if (!progressLog) return;
+
         const entry = document.createElement('div');
         entry.className = `log-entry ${type}`;
-        
-        const icon = this.getIconForType(type);
-        const timestamp = new Date().toLocaleTimeString();
-        
-        entry.innerHTML = `
-            <span class="log-icon">${icon}</span>
-            <span class="log-text">${message}</span>
-            <span class="log-time" style="font-size: 0.8rem; color: #64748b; margin-left: auto;">${timestamp}</span>
-        `;
-        
-        logContainer.appendChild(entry);
-        
-        if (scroll) {
-            logContainer.scrollTop = logContainer.scrollHeight;
-        }
-        
-        // Limit log entries to prevent memory issues
-        const maxEntries = 100;
-        while (logContainer.children.length > maxEntries) {
-            logContainer.removeChild(logContainer.firstChild);
-        }
+        const icons = { info: '📝', success: '✅', error: '❌' };
+        entry.innerHTML = `<span class="log-icon">${icons[type] || '•'}</span><span class="log-text">${message}</span>`;
+        progressLog.appendChild(entry);
+        progressLog.scrollTop = progressLog.scrollHeight;
     }
 
-    getIconForType(type) {
-        const icons = {
-            info: '💬',
-            success: '✅',
-            error: '❌',
-            warning: '⚠️'
-        };
-        return icons[type] || '📝';
-    }
-
-    formatStatus(status) {
-        const statusMap = {
-            starting: 'Starting...',
-            generating: 'Generating',
-            completed: 'Completed',
-            error: 'Error',
-            ready: 'Ready'
-        };
-        return statusMap[status] || status;
-    }
-
-    addVerboseLog(message, isError = false) {
+    addVerboseLog(type, message) {
         const verboseLog = document.getElementById('verbose-log');
-        const timestamp = new Date().toISOString();
-        const prefix = isError ? '[ERROR]' : '[INFO]';
-        const logEntry = `${timestamp} ${prefix} ${message}\n`;
-        
-        verboseLog.value += logEntry;
+        if (!verboseLog) return;
+
+        const timestamp = new Date().toLocaleTimeString();
+        const logMessage = `[${timestamp}] [${type.toUpperCase()}] ${message}\n`;
+        verboseLog.value += logMessage;
         verboseLog.scrollTop = verboseLog.scrollHeight;
     }
 
     clearVerboseLogs() {
         const verboseLog = document.getElementById('verbose-log');
-        verboseLog.value = '';
-        this.addVerboseLog('Logs cleared by user');
+        if (verboseLog) verboseLog.value = '';
+    }
+
+    copyVerboseLogs() {
+        const verboseLog = document.getElementById('verbose-log');
+        if (verboseLog && verboseLog.value) {
+            navigator.clipboard.writeText(verboseLog.value);
+            this.showSuccess('Logs copied to clipboard!');
+        }
     }
 
     toggleVerboseLogs() {
         const verboseLogContent = document.getElementById('verbose-log-content');
         const toggleIcon = document.getElementById('toggle-logs-icon');
-        
-        if (verboseLogContent && toggleIcon) {
+
+        if (verboseLogContent) {
             verboseLogContent.classList.toggle('collapsed');
-            
-            if (verboseLogContent.classList.contains('collapsed')) {
-                toggleIcon.textContent = '▶';
-                this.addVerboseLog('Verbose logs collapsed by user');
-            } else {
-                toggleIcon.textContent = '▼';
-                this.addVerboseLog('Verbose logs expanded by user');
+            if (toggleIcon) {
+                toggleIcon.textContent = verboseLogContent.classList.contains('collapsed') ? '▶' : '▼';
             }
         }
     }
 
-    async copyVerboseLogs() {
-        const verboseLog = document.getElementById('verbose-log');
-        try {
-            await navigator.clipboard.writeText(verboseLog.value);
-            this.addLogEntry('success', '📋 Logs copied to clipboard');
-        } catch (error) {
-            this.addLogEntry('error', '❌ Failed to copy logs to clipboard');
+    // ============================================
+    // GITHUB INTEGRATION
+    // ============================================
+
+    openGitHubModal() {
+        document.getElementById('github-import-modal')?.classList.remove('hidden');
+    }
+
+    closeGitHubModal() {
+        document.getElementById('github-import-modal')?.classList.add('hidden');
+        document.getElementById('github-url').value = '';
+        document.getElementById('github-branch').value = 'main';
+    }
+
+    async handleGitHubImport() {
+        const url = document.getElementById('github-url')?.value || '';
+        const branch = document.getElementById('github-branch')?.value || 'main';
+
+        if (!url) {
+            this.showError('Please enter a GitHub URL');
+            return;
         }
+
+        this.setLoading(true);
+        this.addVerboseLog('info', `Importing from GitHub: ${url} (${branch})`);
+
+        try {
+            // In production, this would call a backend endpoint to clone the repo
+            // For now, we'll just show a placeholder message
+            this.addLogEntry('info', `📦 Importing repository: ${url.split('/').pop()}`);
+            this.addVerboseLog('info', 'GitHub import feature coming soon - backend implementation required');
+            
+            this.showSuccess('GitHub import feature coming soon!');
+            this.closeGitHubModal();
+        } catch (error) {
+            console.error('GitHub import error:', error);
+            this.showError('GitHub import failed');
+            this.addVerboseLog('error', 'GitHub import error: ' + error.message);
+        } finally {
+            this.setLoading(false);
+        }
+    }
+
+    // ============================================
+    // MODALS
+    // ============================================
+
+    openInfoModal() {
+        document.getElementById('info-modal')?.classList.remove('hidden');
+    }
+
+    closeInfoModal() {
+        document.getElementById('info-modal')?.classList.add('hidden');
+    }
+
+    // ============================================
+    // UTILITIES
+    // ============================================
+
+    setLoading(isLoading) {
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) {
+            if (isLoading) {
+                overlay.classList.add('active');
+            } else {
+                overlay.classList.remove('active');
+            }
+        }
+    }
+
+    showSuccess(message) {
+        console.log('✅ ' + message);
+        // Could add toast notification here
+    }
+
+    showError(message) {
+        console.error('❌ ' + message);
+        this.addLogEntry('error', message);
+        // Could add toast notification here
     }
 }
 
-// Initialize the app when DOM is loaded
+// Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-    try {
-        const app = new LovableClone();
-        window.lovableCloneApp = app; // For debugging in console
-    } catch (error) {
-        console.error('Error initializing LovableClone:', error);
-    }
+    window.fusionApp = new FusionApp();
 });
