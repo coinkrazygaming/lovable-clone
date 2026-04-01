@@ -3,22 +3,13 @@ import path from 'path';
 import fs from 'fs';
 import { database } from '../lib/database';
 import { authMiddleware, optionalAuthMiddleware, generateToken, verifyToken, AuthRequest } from '../lib/auth';
-import { 
-    createProjectMemory, 
-    loadProjectMemory, 
-    updateProjectMemory, 
-    buildContextFromMemory 
+import {
+    createProjectMemory,
+    loadProjectMemory,
+    updateProjectMemory,
+    buildContextFromMemory
 } from '../lib/projectMemory';
-
-let generateWithClaude: any;
-(async () => {
-    try {
-        const generator = require('../lib/generator.js');
-        generateWithClaude = generator.generateWithClaude;
-    } catch (error) {
-        console.error('Failed to load generator:', error);
-    }
-})();
+import { generateWithClaude } from '../lib/generator';
 
 const router: Router = express.Router();
 const activeGenerations = new Map();
