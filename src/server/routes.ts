@@ -351,7 +351,7 @@ async function generateProject(generationId: string, prompt: string, continueFro
         generation.status = 'generating';
         
         let contextualPrompt = prompt;
-        let targetProjectPath = null;
+        let targetProjectPath: string | undefined = undefined;
         let existingMemory = null;
         
         if (continueFromProject) {
@@ -395,10 +395,10 @@ async function generateProject(generationId: string, prompt: string, continueFro
             });
         }
 
-        if (result.projectPath && fs.existsSync(result.projectPath)) {
-            generation.projectPath = result.projectPath;
-            const projectName = path.basename(result.projectPath);
-            
+        if (result.outputDirectory && fs.existsSync(result.outputDirectory)) {
+            generation.projectPath = result.outputDirectory;
+            const projectName = path.basename(result.outputDirectory);
+
             generation.progress.push({
                 timestamp: new Date(),
                 type: 'success',
@@ -408,12 +408,12 @@ async function generateProject(generationId: string, prompt: string, continueFro
             generation.verboseLogs.push({
                 timestamp: new Date().toISOString(),
                 type: 'success',
-                message: `Project successfully ${continueFromProject ? 'updated' : 'generated'} at: ${result.projectPath}`
+                message: `Project successfully ${continueFromProject ? 'updated' : 'generated'} at: ${result.outputDirectory}`
             });
 
-            if (!continueFromProject && result.projectPath) {
-                const projectName = path.basename(result.projectPath as string);
-                createProjectMemory(projectName, prompt, result.projectPath as string);
+            if (!continueFromProject && result.outputDirectory) {
+                const projectName = path.basename(result.outputDirectory as string);
+                createProjectMemory(projectName, prompt, result.outputDirectory as string);
             } else if (targetProjectPath && existingMemory) {
                 updateProjectMemory(targetProjectPath, prompt, { success: true });
             }
