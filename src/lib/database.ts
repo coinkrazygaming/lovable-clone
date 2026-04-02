@@ -99,9 +99,12 @@ class Database {
     // USER METHODS
     // ============================================
 
-    async getUserByEmail(email: string): Promise<any> {
+    async getUserByEmail(email: string, includePassword: boolean = false): Promise<any> {
         for (const user of this.users.values()) {
             if (user.email === email) {
+                if (includePassword) {
+                    return user;
+                }
                 return { ...user, password: undefined };
             }
         }

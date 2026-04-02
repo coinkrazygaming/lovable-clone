@@ -26,7 +26,7 @@ router.post('/api/auth/login', async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Email and password required' });
         }
 
-        const user = await database.getUserByEmail(email);
+        const user = await database.getUserByEmail(email, true);
         if (!user) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
@@ -126,7 +126,12 @@ router.get('/api/organization', authMiddleware, async (req: AuthRequest, res: Re
 
 router.get('/api/spaces', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
-        const spaces = await database.getSpacesByOrganization(req.user!.organizationId);
+        if (!req.user) {
+            console.error('No user in request for GET /api/spaces');
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const spaces = await database.getSpacesByOrganization(req.user.organizationId);
         res.json({ spaces });
     } catch (error) {
         console.error('Get spaces error:', error);
@@ -142,15 +147,21 @@ router.post('/api/spaces', authMiddleware, async (req: AuthRequest, res: Respons
             return res.status(400).json({ error: 'Space name required' });
         }
 
-        const spaces = await database.getSpacesByOrganization(req.user!.organizationId);
+        // Check if user is authenticated
+        if (!req.user || !req.user.organizationId) {
+            console.error('Invalid user or missing organizationId:', req.user);
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        const spaces = await database.getSpacesByOrganization(req.user.organizationId);
         if (spaces.length >= 10) {
             return res.status(409).json({ error: 'Maximum 10 spaces allowed per organization' });
         }
 
         const spaceId = 'space-' + Date.now();
-        const space = await database.createSpace(spaceId, req.user!.organizationId, name, description);
+        const space = await database.createSpace(spaceId, req.user.organizationId, name, description);
 
-        res.json(space);
+        res.status(201).json(space);
     } catch (error) {
         console.error('Create space error:', error);
         res.status(500).json({ error: 'Failed to create space' });
